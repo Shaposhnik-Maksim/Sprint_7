@@ -7,12 +7,11 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.*;
 
-public class CourierLoginTest{
-
+public class CourierLoginTest {
     private String baseUrl = "https://qa-scooter.praktikum-services.ru/api/v1";
-    private String courierLogin = "loginCourier";
-    private String courierPassword = "secret123";
-    private String courierFirstName = "Autotest";
+    private String courierLogin = "MaksiBom1998";
+    private String courierPassword = "1234";
+    private String courierFirstName = "Maksim";
     private int courierId = -1;
 
     @Before
@@ -20,20 +19,17 @@ public class CourierLoginTest{
         RestAssured.baseURI = baseUrl;
 
         // Создание курьера перед тестами
-        String body = String.format("{\"login\":\"%s\", \"password\":\"%s\", \"firstName\":\"%s\"}",
-                courierLogin, courierPassword, courierFirstName);
+        Courier courier = new Courier(courierLogin, courierPassword, courierFirstName);
 
-        RestAssured
-                .given()
+        RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(body)
+                .body(courier)
                 .post("/courier");
 
         // Получение id
-        Response response = RestAssured
-                .given()
+        Response response = RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(String.format("{\"login\":\"%s\", \"password\":\"%s\"}", courierLogin, courierPassword))
+                .body(new CourierCredentials(courierLogin, courierPassword))
                 .post("/courier/login");
 
         courierId = response.path("id");
@@ -42,18 +38,16 @@ public class CourierLoginTest{
     @After
     public void tearDown() {
         if (courierId != -1) {
-            RestAssured
-                    .given()
+            RestAssured.given()
                     .delete("/courier/" + courierId);
         }
     }
 
     @Test
     public void courierCanLoginWithValidCredentials() {
-        RestAssured
-                .given()
+        RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(String.format("{\"login\":\"%s\", \"password\":\"%s\"}", courierLogin, courierPassword))
+                .body(new CourierCredentials(courierLogin, courierPassword))
                 .when()
                 .post("/courier/login")
                 .then()
@@ -63,10 +57,9 @@ public class CourierLoginTest{
 
     @Test
     public void loginFailsWithWrongPassword() {
-        RestAssured
-                .given()
+        RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(String.format("{\"login\":\"%s\", \"password\":\"wrongpass\"}", courierLogin))
+                .body(new CourierCredentials(courierLogin, "wrongpass"))
                 .when()
                 .post("/courier/login")
                 .then()
@@ -76,10 +69,9 @@ public class CourierLoginTest{
 
     @Test
     public void loginFailsWithWrongLogin() {
-        RestAssured
-                .given()
+        RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(String.format("{\"login\":\"wronglogin\", \"password\":\"%s\"}", courierPassword))
+                .body(new CourierCredentials("wronglogin", courierPassword))
                 .when()
                 .post("/courier/login")
                 .then()
@@ -89,10 +81,9 @@ public class CourierLoginTest{
 
     @Test
     public void loginFailsWithoutPassword() {
-        RestAssured
-                .given()
+        RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(String.format("{\"login\":\"%s\"}", courierLogin))
+                .body(new CourierCredentialsWithoutPassword(courierLogin))
                 .when()
                 .post("/courier/login")
                 .then()
@@ -102,10 +93,9 @@ public class CourierLoginTest{
 
     @Test
     public void loginFailsWithoutLogin() {
-        RestAssured
-                .given()
+        RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(String.format("{\"password\":\"%s\"}", courierPassword))
+                .body(new CourierCredentialsWithoutLogin(courierPassword))
                 .when()
                 .post("/courier/login")
                 .then()
@@ -115,14 +105,80 @@ public class CourierLoginTest{
 
     @Test
     public void loginFailsForNonExistentCourier() {
-        RestAssured
-                .given()
+        RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body("{\"login\":\"nonexistent\", \"password\":\"whatever\"}")
+                .body(new CourierCredentials("nonexistent", "whatever"))
                 .when()
                 .post("/courier/login")
                 .then()
                 .statusCode(404)
                 .body("message", containsString("Учетная запись не найдена"));
+    }
+
+    // POJO классы для сериализации
+    private static class Courier {
+        private final String login;
+        private final String password;
+        private final String firstName;
+
+        public Courier(String login, String password, String firstName) {
+            this.login = login;
+            this.password = password;
+            this.firstName = firstName;
+        }
+
+        public String getLogin() {
+            return login;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+    }
+
+    private static class CourierCredentials {
+        private final String login;
+        private final String password;
+
+        public CourierCredentials(String login, String password) {
+            this.login = login;
+            this.password = password;
+        }
+
+        public String getLogin() {
+            return login;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+    }
+
+    private static class CourierCredentialsWithoutPassword {
+        private final String login;
+
+        public CourierCredentialsWithoutPassword(String login) {
+            this.login = login;
+        }
+
+        public String getLogin() {
+            return login;
+        }
+    }
+
+    private static class CourierCredentialsWithoutLogin {
+        private final String password;
+
+        public CourierCredentialsWithoutLogin(String password) {
+            this.password = password;
+        }
+
+        public String getPassword() {
+            return password;
+        }
     }
 }

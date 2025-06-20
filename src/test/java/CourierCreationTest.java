@@ -4,6 +4,7 @@ import io.restassured.response.Response;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import io.qameta.allure.Step;
 
 import static org.hamcrest.Matchers.*;
 
@@ -16,51 +17,33 @@ public class CourierCreationTest {
     private int createdCourierId = -1;
 
     @Before
+    @Step("Настройка базового URL")
     public void setUp() {
         RestAssured.baseURI = baseUrl;
     }
 
     @After
+    @Step("Удаление созданного курьера")
     public void tearDown() {
         if (createdCourierId != -1) {
             // Удаляем курьера после теста
-            RestAssured
-                    .given()
-                    .contentType(ContentType.JSON)
-                    .body(new CourierCredentials (courierLogin, courierPassword))
-                    .when()
-                    .post("/courier/login")
-                    .then()
-                    .statusCode(200);
-
-            RestAssured
-                    .given()
-                    .when()
-                    .delete("/courier/" + createdCourierId)
-                    .then()
-                    .statusCode(200);
+            loginCourier(courierLogin, courierPassword);
+            deleteCourier(createdCourierId);
         }
     }
 
     @Test
+    @Step("Тест успешного создания курьера")
     public void createCourierSuccessfully() {
         Courier courier = new Courier(courierLogin, courierPassword, courierFirstName);
 
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(courier)
-                .when()
-                .post("/courier")
+        createNewCourier(courier)
                 .then()
                 .statusCode(201)
                 .body("ok", equalTo(true));
 
         // Авторизация, чтобы получить id курьера для удаления
-        Response loginResponse = RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(new CourierCredentials(courierLogin, courierPassword))
-                .when()
-                .post("/courier/login")
+        Response loginResponse = loginCourier(courierLogin, courierPassword)
                 .then()
                 .statusCode(200)
                 .body("id", notNullValue())
@@ -70,38 +53,58 @@ public class CourierCreationTest {
         createdCourierId = loginResponse.path("id");
     }
 
-
     @Test
+    @Step("Тест невозможности создания дубликата курьера")
     public void cannotCreateDuplicateCourier() {
-        // Cоздаем курьера
+        // Создаем курьера
         createCourierSuccessfully();
 
         // Пытаемся создать курьера с таким же логином
         Courier duplicateCourier = new Courier(courierLogin, courierPassword, courierFirstName);
 
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(duplicateCourier)
-                .when()
-                .post("/courier")
+        createNewCourier(duplicateCourier)
                 .then()
                 .statusCode(409)
                 .body("message", containsString("Этот логин уже используется"));
     }
 
     @Test
+    @Step("Тест невозможности создания курьера без обязательных полей")
     public void cannotCreateCourierWithoutRequiredFields() {
         // Создаём без поля password
         Courier invalidCourier = new Courier(courierLogin, null, courierFirstName);
 
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(invalidCourier)
-                .when()
-                .post("/courier")
+        createNewCourier(invalidCourier)
                 .then()
                 .statusCode(400)
                 .body("message", containsString("Недостаточно данных для создания учетной записи"));
+    }
+
+    @Step("Создание нового курьера")
+    private Response createNewCourier(Courier courier) {
+        return RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(courier)
+                .when()
+                .post("/courier");
+    }
+
+    @Step("Авторизация курьера")
+    private Response loginCourier(String login, String password) {
+        return RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(new CourierCredentials(login, password))
+                .when()
+                .post("/courier/login");
+    }
+
+    @Step("Удаление курьера с id {courierId}")
+    private void deleteCourier(int courierId) {
+        RestAssured.given()
+                .when()
+                .delete("/courier/" + courierId)
+                .then()
+                .statusCode(200);
     }
 
     private static class Courier {
@@ -115,7 +118,6 @@ public class CourierCreationTest {
             this.firstName = firstName;
         }
 
-        // Геттеры необходимы для сериализации
         public String getLogin() {
             return login;
         }

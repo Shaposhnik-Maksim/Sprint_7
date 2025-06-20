@@ -1,3 +1,4 @@
+import io.qameta.allure.Step;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -32,11 +33,13 @@ public class CreateOrderTest {
     }
 
     @Before
+    @Step("Настройка базового URL API")
     public void setUp() {
         RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru/api/v1";
     }
 
     @Test
+    @Step("Создание заказа с цветами: {color}")
     public void createOrderWithDifferentColors() {
         Order order = new Order(
                 "Имя", "Фамилия", "ул. Пример 1", "4", "+79991234567",

@@ -4,6 +4,7 @@ import io.restassured.response.Response;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import io.qameta.allure.Step;
 
 import static org.hamcrest.Matchers.*;
 
@@ -15,71 +16,56 @@ public class CourierLoginTest {
     private int courierId = -1;
 
     @Before
+    @Step("Подготовка тестовых данных - создание курьера")
     public void setUp() {
         RestAssured.baseURI = baseUrl;
 
         // Создание курьера перед тестами
         Courier courier = new Courier(courierLogin, courierPassword, courierFirstName);
+        createCourier(courier);
 
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(courier)
-                .post("/courier");
-
-        // Получение id
-        Response response = RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(new CourierCredentials(courierLogin, courierPassword))
-                .post("/courier/login");
-
+        // Получение id созданного курьера
+        Response response = loginCourier(courierLogin, courierPassword);
         courierId = response.path("id");
     }
 
     @After
+    @Step("Очистка тестовых данных - удаление курьера")
     public void tearDown() {
         if (courierId != -1) {
-            RestAssured.given()
-                    .delete("/courier/" + courierId);
+            deleteCourier(courierId);
         }
     }
 
     @Test
+    @Step("Тест успешного входа с валидными учетными данными")
     public void courierCanLoginWithValidCredentials() {
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(new CourierCredentials(courierLogin, courierPassword))
-                .when()
-                .post("/courier/login")
+        loginCourier(courierLogin, courierPassword)
                 .then()
                 .statusCode(200)
                 .body("id", notNullValue());
     }
 
     @Test
+    @Step("Тест входа с неверным паролем")
     public void loginFailsWithWrongPassword() {
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(new CourierCredentials(courierLogin, "wrongpass"))
-                .when()
-                .post("/courier/login")
+        loginCourier(courierLogin, "wrongpass")
                 .then()
                 .statusCode(404)
                 .body("message", containsString("Учетная запись не найдена"));
     }
 
     @Test
+    @Step("Тест входа с неверным логином")
     public void loginFailsWithWrongLogin() {
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(new CourierCredentials("wronglogin", courierPassword))
-                .when()
-                .post("/courier/login")
+        loginCourier("wronglogin", courierPassword)
                 .then()
                 .statusCode(404)
                 .body("message", containsString("Учетная запись не найдена"));
     }
 
     @Test
+    @Step("Тест входа без пароля")
     public void loginFailsWithoutPassword() {
         RestAssured.given()
                 .contentType(ContentType.JSON)
@@ -92,6 +78,7 @@ public class CourierLoginTest {
     }
 
     @Test
+    @Step("Тест входа без логина")
     public void loginFailsWithoutLogin() {
         RestAssured.given()
                 .contentType(ContentType.JSON)
@@ -104,15 +91,35 @@ public class CourierLoginTest {
     }
 
     @Test
+    @Step("Тест входа для несуществующего курьера")
     public void loginFailsForNonExistentCourier() {
-        RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(new CourierCredentials("nonexistent", "whatever"))
-                .when()
-                .post("/courier/login")
+        loginCourier("nonexistent", "whatever")
                 .then()
                 .statusCode(404)
                 .body("message", containsString("Учетная запись не найдена"));
+    }
+
+    // Вспомогательные методы с аннотациями Step
+    @Step("Создание курьера {courier.login}")
+    private void createCourier(Courier courier) {
+        RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(courier)
+                .post("/courier");
+    }
+
+    @Step("Авторизация курьера {login}")
+    private Response loginCourier(String login, String password) {
+        return RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(new CourierCredentials(login, password))
+                .post("/courier/login");
+    }
+
+    @Step("Удаление курьера с id {courierId}")
+    private void deleteCourier(int courierId) {
+        RestAssured.given()
+                .delete("/courier/" + courierId);
     }
 
     // POJO классы для сериализации

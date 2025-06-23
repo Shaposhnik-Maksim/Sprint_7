@@ -8,7 +8,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import steps.CourierSteps;
-
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 

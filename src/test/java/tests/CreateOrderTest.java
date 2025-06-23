@@ -11,7 +11,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
 import static org.hamcrest.Matchers.notNullValue;
 
 @RunWith(Parameterized.class)

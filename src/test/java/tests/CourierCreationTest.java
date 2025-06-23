@@ -10,6 +10,7 @@ import org.junit.Test;
 import io.qameta.allure.Step;
 import static org.hamcrest.Matchers.*;
 
+
 public class CourierCreationTest {
 
     private static final String baseUrl = "https://qa-scooter.praktikum-services.ru/api/v1";

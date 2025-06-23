@@ -1,5 +1,6 @@
 package models;
 
+
 public class CourierCredentialsWithoutLogin {
     private final String password;
 

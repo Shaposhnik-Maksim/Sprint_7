@@ -7,7 +7,6 @@ import models.CourierCredentials;
 import models.CourierCredentialsWithoutLogin;
 import models.CourierCredentialsWithoutPassword;
 
-
 public class CourierApi {
     private static final String baseUrl = "https://qa-scooter.praktikum-services.ru/api/v1";
 

@@ -1,5 +1,6 @@
 package models;
 
+
 public class CourierCredentials {
     private final String login;
     private final String password;

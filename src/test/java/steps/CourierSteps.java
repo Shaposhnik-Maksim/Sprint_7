@@ -7,7 +7,6 @@ import models.CourierCredentials;
 import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.given;
 
-
 public class CourierSteps {
     @Step("Создать курьера")
     public static Response createCourier(Courier courier) {

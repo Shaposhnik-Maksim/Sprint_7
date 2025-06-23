@@ -1,19 +1,20 @@
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import models.Courier;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import io.qameta.allure.Step;
-
 import static org.hamcrest.Matchers.*;
 
 public class CourierCreationTest {
 
-    private String baseUrl = "https://qa-scooter.praktikum-services.ru/api/v1";
-    private String courierLogin = "MaksiBom1998";
-    private String courierPassword = "1234";
-    private String courierFirstName = "Maksim";
+    private static final String baseUrl = "https://qa-scooter.praktikum-services.ru/api/v1";
+    private static final String courierLogin = "MaksiBom1998";
+    private static final String courierPassword = "1234";
+    private static final String courierFirstName = "Maksim";
+
     private int createdCourierId = -1;
 
     @Before
@@ -26,8 +27,6 @@ public class CourierCreationTest {
     @Step("Удаление созданного курьера")
     public void tearDown() {
         if (createdCourierId != -1) {
-            // Удаляем курьера после теста
-            loginCourier(courierLogin, courierPassword);
             deleteCourier(createdCourierId);
         }
     }
@@ -42,27 +41,19 @@ public class CourierCreationTest {
                 .statusCode(201)
                 .body("ok", equalTo(true));
 
-        // Авторизация, чтобы получить id курьера для удаления
-        Response loginResponse = loginCourier(courierLogin, courierPassword)
-                .then()
-                .statusCode(200)
-                .body("id", notNullValue())
-                .extract()
-                .response();
-
-        createdCourierId = loginResponse.path("id");
+        createdCourierId = loginAndGetId(courierLogin, courierPassword);
     }
 
     @Test
     @Step("Тест невозможности создания дубликата курьера")
     public void cannotCreateDuplicateCourier() {
         // Создаем курьера
-        createCourierSuccessfully();
+        Courier courier = new Courier(courierLogin, courierPassword, courierFirstName);
+        createNewCourier(courier);
+        createdCourierId = loginAndGetId(courierLogin, courierPassword);
 
         // Пытаемся создать курьера с таким же логином
-        Courier duplicateCourier = new Courier(courierLogin, courierPassword, courierFirstName);
-
-        createNewCourier(duplicateCourier)
+        createNewCourier(courier)
                 .then()
                 .statusCode(409)
                 .body("message", containsString("Этот логин уже используется"));
@@ -72,7 +63,7 @@ public class CourierCreationTest {
     @Step("Тест невозможности создания курьера без обязательных полей")
     public void cannotCreateCourierWithoutRequiredFields() {
         // Создаём без поля password
-        Courier invalidCourier = new Courier(courierLogin, null, courierFirstName);
+        models.Courier invalidCourier = new models.Courier(courierLogin, null, courierFirstName);
 
         createNewCourier(invalidCourier)
                 .then()
@@ -80,8 +71,18 @@ public class CourierCreationTest {
                 .body("message", containsString("Недостаточно данных для создания учетной записи"));
     }
 
+    @Step("Получение ID курьера после авторизации")
+    private int loginAndGetId(String login, String password) {
+        return loginCourier(login, password)
+                .then()
+                .statusCode(200)
+                .body("id", notNullValue())
+                .extract()
+                .path("id");
+    }
+
     @Step("Создание нового курьера")
-    private Response createNewCourier(Courier courier) {
+    private Response createNewCourier(models.Courier courier) {
         return RestAssured.given()
                 .contentType(ContentType.JSON)
                 .body(courier)
@@ -93,7 +94,7 @@ public class CourierCreationTest {
     private Response loginCourier(String login, String password) {
         return RestAssured.given()
                 .contentType(ContentType.JSON)
-                .body(new CourierCredentials(login, password))
+                .body(new models.CourierCredentials(login, password))
                 .when()
                 .post("/courier/login");
     }
@@ -105,47 +106,5 @@ public class CourierCreationTest {
                 .delete("/courier/" + courierId)
                 .then()
                 .statusCode(200);
-    }
-
-    private static class Courier {
-        private String login;
-        private String password;
-        private String firstName;
-
-        public Courier(String login, String password, String firstName) {
-            this.login = login;
-            this.password = password;
-            this.firstName = firstName;
-        }
-
-        public String getLogin() {
-            return login;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public String getFirstName() {
-            return firstName;
-        }
-    }
-
-    private static class CourierCredentials {
-        private String login;
-        private String password;
-
-        public CourierCredentials(String login, String password) {
-            this.login = login;
-            this.password = password;
-        }
-
-        public String getLogin() {
-            return login;
-        }
-
-        public String getPassword() {
-            return password;
-        }
     }
 }

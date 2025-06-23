@@ -1,7 +1,9 @@
+package tests;
 import io.qameta.allure.Step;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import models.Order;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -42,8 +44,7 @@ public class CreateOrderTest {
     public void createOrderWithDifferentColors() {
         Order order = new Order(
                 "Имя", "Фамилия", "ул. Пример 1", "4", "+79991234567",
-                5, "2025-06-01", "Комментарий", color
-        );
+                5, "2025-06-01", "Комментарий", color);
 
         Response response = RestAssured
                 .given()

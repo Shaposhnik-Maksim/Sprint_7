@@ -1,11 +1,19 @@
 package models;
-import lombok.Data;
-import lombok.AllArgsConstructor;
 
-@Data
-@AllArgsConstructor
 public class CourierCredentials {
-    private String login;
-    private String password;
+    private final String login;
+    private final String password;
 
+    public CourierCredentials(String login, String password) {
+        this.login = login;
+        this.password = password;
+    }
+
+    // Getters
+    public String getLogin() {
+        return login;
+    }
+    public String getPassword() {
+        return password;
+    }
 }

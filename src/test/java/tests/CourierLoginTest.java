@@ -24,8 +24,6 @@ public class CourierLoginTest {
         Courier courier = new Courier(courierLogin, courierPassword, courierFirstName);
         Response createResponse = CourierSteps.createCourier(courier);
         createResponse.then().statusCode(201);
-
-        // Получаем ID через авторизацию
         Response loginResponse = CourierSteps.loginCourier(
                 new CourierCredentials(courierLogin, courierPassword)
         );
@@ -95,7 +93,6 @@ public class CourierLoginTest {
     @DisplayName("Ошибка при входе без логина")
     public void loginFailsWithoutLogin() {
         Response response = CourierSteps.loginWithoutLogin(courierPassword);
-
         response.then()
                 .statusCode(400)
                 .body("message", equalTo("Недостаточно данных для входа"));

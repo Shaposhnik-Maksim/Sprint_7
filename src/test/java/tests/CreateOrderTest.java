@@ -19,6 +19,7 @@ public class CreateOrderTest {
     private final List<String> color;
 
     public CreateOrderTest(List<String> color) {
+
         this.color = color;
     }
 

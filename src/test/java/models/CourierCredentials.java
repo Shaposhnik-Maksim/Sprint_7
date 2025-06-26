@@ -9,12 +9,4 @@ public class CourierCredentials {
         this.login = login;
         this.password = password;
     }
-
-    // Getters
-    public String getLogin() {
-        return login;
-    }
-    public String getPassword() {
-        return password;
-    }
 }
